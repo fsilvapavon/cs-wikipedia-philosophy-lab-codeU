@@ -7,7 +7,7 @@ import java.util.List;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
-
+import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 
 public class WikiPhilosophy {
@@ -31,21 +31,72 @@ public class WikiPhilosophy {
 		
         // some example code to get you started
 
-		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
-		Elements paragraphs = wf.fetchWikipedia(url);
+		Boolean foundPhil=false;
+		String url = "/wiki/Java_(programming_language)";
+		ArrayList<String> urlFound=new ArrayList<String>();
+		while(!foundPhil) {
+			Elements paragraphs = wf.fetchWikipedia("https://en.wikipedia.org"+url);
+			
+			Element firstPara = paragraphs.get(0);
+			Iterable<Node> iter = new WikiNodeIterable(firstPara);
+			Boolean foundLink=false;
+			Boolean isItalic=false;
+			Boolean repeatLink=false;
+			for (Node node: iter) {
+				if (node instanceof Element) {
+					Elements links=((Element) node).select("a");
+					for(Element e : links) {
+						url=((Element) node).attr("href");
+						if(url.equals("/wiki/Philosophy")) {
+							System.out.println(url);
+							foundPhil=true;
+							return;
+						}
+						if(url.startsWith("/wiki/")) {
+							Elements parents=((Element) e).parents();
+							for (Element element : parents) {
+								if(Tag.valueOf(element.tag().getName()).equals("i")||
+										Tag.valueOf(element.tag().getName()).equals("em")) {
+									isItalic=true;
+									break;
+								}
 
-		Element firstPara = paragraphs.get(0);
-		
-		Iterable<Node> iter = new WikiNodeIterable(firstPara);
-		for (Node node: iter) {
-			if (node instanceof TextNode) {
-				System.out.print(node);
+							}
+							if(isItalic)
+								break;
+							for(String s: urlFound) {
+								if(s.equals(url)) {
+									repeatLink=true;
+									break;
+								}
+							}
+							if(!repeatLink) {
+								System.out.println(url);
+								urlFound.add(url);
+								foundLink=true;
+							}
+							break;
+						}
+						if(foundLink)
+							break;
+					}
+				}
+				if(foundLink) {
+					foundLink=false;
+					break;
+
+				}
+				repeatLink=false;
 			}
-        }
+		}
 
-        // the following throws an exception so the test fails
-        // until you update the code
-        String msg = "Complete this lab by adding your code and removing this statement.";
-        throw new UnsupportedOperationException(msg);
 	}
+
+	// the following throws an exception so the test fails
+	// until you update the code
+
 }
+
+
+
+
